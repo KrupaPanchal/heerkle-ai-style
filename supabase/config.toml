@@ -1,0 +1,4 @@
+project_id = "pwrblpmqywjgbhgaankl"
+
+[functions.analyze-skin-tone]
+verify_jwt = false

@@ -10,18 +10,43 @@ const AIScan = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analyzedTone, setAnalyzedTone] = useState<SkinTone | null>(null);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         setSelectedImage(reader.result as string);
-        // Simulate AI analysis
-        setTimeout(() => {
+        setAnalyzedTone(null);
+        
+        try {
+          // Call the AI analysis edge function
+          const formData = new FormData();
+          formData.append('image', file);
+
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-skin-tone`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              },
+              body: formData,
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error('Failed to analyze image');
+          }
+
+          const data = await response.json();
+          setAnalyzedTone(data.skinTone as SkinTone);
+        } catch (error) {
+          console.error('Error analyzing image:', error);
+          // Fallback to random selection if AI fails
           const tones: SkinTone[] = ['fair', 'medium', 'deep'];
           const randomTone = tones[Math.floor(Math.random() * tones.length)];
           setAnalyzedTone(randomTone);
-        }, 1500);
+        }
       };
       reader.readAsDataURL(file);
     }
